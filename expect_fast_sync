@@ -1,0 +1,9 @@
+#!/usr/bin/expect
+set file [lindex $argv 0]
+set hostaddress [lindex $argv 1]
+set hostIP [lindex $argv 2]
+
+spawn rsync -hav $file bgprocess@$hostIP:$hostaddress
+expect "Password:"
+send   "just4compute\r"
+expect eof
