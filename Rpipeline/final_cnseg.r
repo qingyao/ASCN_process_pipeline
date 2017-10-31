@@ -47,8 +47,6 @@ cnseg <- function(seriesName,chipType,workingdir,memory,sourcedir,sdforce,arrayN
     cnsegPerArray(workingdir,seriesName, arrayName)
   }
 
-
-
   gc()
 
 

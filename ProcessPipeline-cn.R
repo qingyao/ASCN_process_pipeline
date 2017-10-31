@@ -48,11 +48,10 @@ for (chipType in chipTypes){
   incomplete <- 0
   notStarted <- 0
   while(i <= length(cids)){
-    if(file.exists(file.path(remoteProcessPath,cids[i],'segments,cn.tsv') {
+    if(file.exists(file.path(remoteProcessPath,cids[i],'segments,cn.tsv'))) {
       i <- i+1
-      next
-    else {
-      if (i == 1){
+    } else {
+      if (i <= 3){
         notStarted <- 1
       } else{
         incomplete <- 1
@@ -71,7 +70,7 @@ for (chipType in chipTypes){
   } else if (incomplete == 1) {
     ## if some have started, do for individual arrays
     for (cid in cids) {
-      if(file.exists(file.path(remoteProcessPath,cid,'segments,cn.tsv') next
+      if(file.exists(file.path(remoteProcessPath,cid,'segments,cn.tsv'))) next
       localsettings <- settings
       localsettings[['arrayName']] <- cid
       log <- c(log,tryCatch({do.call(cnseg,localsettings)},error=function(e){
