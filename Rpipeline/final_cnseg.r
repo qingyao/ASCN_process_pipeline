@@ -3,7 +3,7 @@
 ########################
 
 
-cnsegPerArray <- function(workingdir,seriesName, cid){
+cnsegPerArray <- function(workingdir,seriesName, cid, undosd){
   dir.create(file.path(workingdir,'processed',seriesName,cid), showWarnings = FALSE)
   fn <- file.path(workingdir,'processed',seriesName,cid, 'segments,cn.tsv')
   cat("sample_id","chromosome","start", "end", "value", "probes\n",sep="\t",file=fn,append = F)
@@ -25,26 +25,29 @@ cnsegPerArray <- function(workingdir,seriesName, cid){
     }
 }
 
-cnseg <- function(seriesName,chipType,workingdir,memory,sourcedir,sdforce,arrayName){
+cnseg <- function(seriesName,arrayName=NULL,chipType,workingdir,sourcedir,memory,sdforce){
   if (sdforce == 0) {
-    if (chipType %in% c('Mapping10k_Xba142')){
+    if (chipType %in% c('Mapping10K_Xba142')){
       undosd = 2
-    } else if (chipType %in% c('Mapping50K_Hind240','Mapping50K_Xba240','Mapping250K_Nsp','Mapping250K_Sty','CytoScan750K','GenomeWideSNP_5')){
+    } else if (chipType %in% c('Mapping50K_Hind240','Mapping50K_Xba240','Mapping250K_Nsp','Mapping250K_Sty','CytoScan750K_Array','GenomeWideSNP_5')){
       undosd = 3
-    } else if (chipType %in% c('GenomeWideSNP_6','CytoScanHD')){
+    } else if (chipType %in% c('GenomeWideSNP_6','CytoScanHD_Array')){
       undosd = 5
     }
-  } else undosd = sdforce
+  } else {
+    undosd = sdforce
+  }
+  print(paste(seriesName,arrayName,chipType,workingdir,sourcedir,memory,sdforce,undosd))
   setOption(aromaSettings, "memory/ram", memory)
   suppressWarnings(suppressMessages(library(DNAcopy)))
   cids <- gsub(".CEL","",list.files(paste('/Volumes/arraymapIncoming/aroma/aromaRaw',seriesName,chipType,sep="/")))
   dir.create(file.path(workingdir,'processed',seriesName), showWarnings = FALSE)
   if (is.null(arrayName)) {
     for (cid in cids){
-      cnsegPerArray(workingdir,seriesName, cid)
+      cnsegPerArray(workingdir,seriesName, cid, undosd)
     }
   } else{
-    cnsegPerArray(workingdir,seriesName, arrayName)
+    cnsegPerArray(workingdir,seriesName, arrayName, undosd)
   }
 
   gc()

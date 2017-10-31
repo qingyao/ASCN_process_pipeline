@@ -4,15 +4,15 @@
 
 1. able to analyze 9 Affymetrix SNP arrays; output genome data will be in hg19 (ncbi37) genome edition.
 
-Mapping10k_Xba142/GPL2641
+Mapping10K_Xba142/GPL2641
 Mapping50K_Hind240/GPL2004
 Mapping50K_Xba240/GPL2005
 Mapping250K_Nsp/GPL3718
 Mapping250K_Sty/GPL3720
-CytoScan750k/GPL18637
+CytoScan750K_Array/GPL18637
 GenomeWideSNP_5/GPL6804
 GenomeWideSNP_6/GPL6801
-CytoScanHD/GPL16131
+CytoScanHD_Array/GPL16131
 
 2. dependent on R packages 'aroma.affymetrix' and 'ACNE'.
 R version 3.3 supported, the latest 3.4 not yet supported the required packages.
