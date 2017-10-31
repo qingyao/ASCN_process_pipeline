@@ -3,17 +3,8 @@ import click, sys, os, time, logging, socket, subprocess
 import pandas as pd
 from subprocess import run
 from multiprocessing.dummy import Pool
+import finder_colors as color
 
-import importlib.machinery
-import types
-loader = importlib.machinery.SourceFileLoader('color','/Users/bgprocess/aroma/AromaPack/finder_colors.py')
-color = types.ModuleType(loader.name)
-loader.exec_module(color)
-
-# Pipelinedir = '/Users/qingyao/Scripts/'
-# outputdir = '/Users/qingyao/'
-# workingdir ='/Users/qingyao/aroma/hg19/'
-#
 @click.command()
 @click.option('-b','--block', default=0, help='Block number out of 5 blocks: 0--4')
 @click.option('-c','--cleanup', default=1, help='Clean up intermediate files: 1 for yes, 0 for no')

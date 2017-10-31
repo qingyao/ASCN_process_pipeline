@@ -2,12 +2,7 @@
 import click, sys, os, time, logging, socket, subprocess
 from subprocess import run
 from multiprocessing.dummy import Pool
-
-import importlib.machinery
-import types
-loader = importlib.machinery.SourceFileLoader('color','/Users/bgprocess/aroma/AromaPack/finder_colors.py')
-color = types.ModuleType(loader.name)
-loader.exec_module(color)
+import finder_colors as color
 
 @click.command()
 @click.option('-b','--block', default=0, help='Block number out of 5 blocks: 0--4')
