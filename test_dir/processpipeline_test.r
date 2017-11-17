@@ -29,5 +29,3 @@ for (chipType in chipTypes){
   print(settings)
   cnseg(seriesName,NULL,chipType,workingdir,sourcedir,memory,sdforce)
 }
-
-}

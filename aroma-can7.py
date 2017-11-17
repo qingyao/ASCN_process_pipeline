@@ -59,7 +59,8 @@ def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,
         c=0
         for line in f:
             if c%allblocks==block:
-                serieslist.append(line.rstrip())
+                if not line.startswith('G'):
+                    serieslist.append('GSE'+line.rstrip())
             c+=1
 
     if not force:
@@ -87,7 +88,8 @@ def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,
         logger.debug('Machine: %s\tSeries: %s'%(machine, seriesname))
         logger.info('Started series: '+seriesname)
         seriesStart = time.time()
-        shellcommand = 'R --vanilla <{0}/ProcessPipeline-cn.R --args {1} {2} {3} {0} {4} {5} 0 &>/dev/null'.format(sourcedir,workingdir,seriesname,cleanup,memory,force)
+        # shellcommand = 'R --vanilla <{0}/ProcessPipeline-cn.R --args {1} {2} {3} {0} {4} {5} 0 &>/dev/null'.format(sourcedir,workingdir,seriesname,cleanup,memory,force)
+        shellcommand = 'R --vanilla <{0}/ProcessPipeline-probe.R --args {1} {2} {3} {0} {4} {5} &>/dev/null'.format(sourcedir,workingdir,seriesname,cleanup,memory,force)
         run(shellcommand,shell=True)
 
         seriesTime =round(time.time()-seriesStart)
