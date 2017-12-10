@@ -61,15 +61,17 @@ def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,
             if c%allblocks==block:
                 if not line.startswith('G'):
                     serieslist.append('GSE'+line.rstrip())
+                else:
+                    serieslist.append(line.rstrip())
             c+=1
 
-    if not force:
-        rmlist = []
-        for s in serieslist:
-            if os.path.exists('/Volumes/arraymapMirror/arraymap/hg19/{0}'.format(s)):
-                if color.get('/Volumes/arraymapMirror/arraymap/hg19/{0}'.format(s)) == 'gray':
-                    rmlist.append(s)
-        serieslist = list(set(serieslist) - set(rmlist))
+    # if not force:
+    #     rmlist = []
+    #     for s in serieslist:
+    #         if os.path.exists('/Volumes/arraymapMirror/arraymap/hg19/{0}'.format(s)):
+    #             if color.get('/Volumes/arraymapMirror/arraymap/hg19/{0}'.format(s)) == 'gray':
+    #                 rmlist.append(s)
+    #     serieslist = list(set(serieslist) - set(rmlist))
 
     machine = socket.gethostname()
     startTime = time.time()
@@ -88,8 +90,8 @@ def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,
         logger.debug('Machine: %s\tSeries: %s'%(machine, seriesname))
         logger.info('Started series: '+seriesname)
         seriesStart = time.time()
-        # shellcommand = 'R --vanilla <{0}/ProcessPipeline-cn.R --args {1} {2} {3} {0} {4} {5} 0 &>/dev/null'.format(sourcedir,workingdir,seriesname,cleanup,memory,force)
-        shellcommand = 'R --vanilla <{0}/ProcessPipeline-probe.R --args {1} {2} {3} {0} {4} {5} &>/dev/null'.format(sourcedir,workingdir,seriesname,cleanup,memory,force)
+        shellcommand = 'R --vanilla <{0}/ProcessPipeline-seg.R --args {1} {2} {0} {3} &>/dev/null'.format(sourcedir,workingdir,seriesname,force)
+        # shellcommand = 'R --vanilla <{0}/ProcessPipeline-probe.R --args {1} {2} {3} {0} {4} {5} &>/dev/null'.format(sourcedir,workingdir,seriesname,cleanup,memory,force)
         run(shellcommand,shell=True)
 
         seriesTime =round(time.time()-seriesStart)

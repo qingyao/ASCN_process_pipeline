@@ -35,23 +35,25 @@ for (chipType in chipTypes){
   checkIncomplete <- function(namestructure) {
     incomplete <- 0
     for(i in 1:length(cids)){
-      while (incomplete == 0) {
+      if (incomplete == 0){
         for (chr in 1:23){
           if(!file.exists(file.path(remoteProcessPath,cids[i],sprintf(namestructure,chr)))) {
             incomplete <- 1
             break
           }
-        }
+        }    
+
       }
     }
     return(incomplete)
   }
   fracbIncomplete <- checkIncomplete('fracB,chr%s.tab')
   cnIncomplete <- checkIncomplete('probes,cn,chr%s.tsv')
-  # message("fracb",fracbIncomplete)
-  # message("cn",cnIncomplete)
+  message("fracb",fracbIncomplete)
+  message("cn",cnIncomplete)
   if (fracbIncomplete | cnIncomplete){
     for (file in files){
+      print(file)
       file.copy(from=paste0(remotepath,"/",file), to=localpath, overwrite = FALSE, recursive = FALSE, copy.mode = TRUE)
     }
   }

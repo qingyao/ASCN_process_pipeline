@@ -42,6 +42,8 @@ def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force)
             if c%allblocks==block:
                 if not line.startswith('G'):
                     serieslist.append('GSE'+line.rstrip())
+                else:
+                    serieslist.append(line.rstrip())
             c+=1
     # if not force:
     #     rmlist = []

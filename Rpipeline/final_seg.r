@@ -1,76 +1,50 @@
+suppressWarnings(suppressMessages(library(DNAcopy)))
+
 ########################
 ### CN segmentation ####
 ########################
 
 
-cnsegPerArray <- function(workingdir,seriesName, cid, undosd, chipType){
-  dir.create(file.path(workingdir,'processed',seriesName,cid), showWarnings = FALSE)
-  fn <- file.path(workingdir,'processed',seriesName,cid, 'segments,cn.tsv')
+cnsegPerArray <- function(workingdir,seriesName, arrayName, undosd, chipType){
+  dir.create(file.path(workingdir,'processed',seriesName,arrayName), showWarnings = FALSE)
+  dir.create(file.path(workingdir,'processed',seriesName,arrayName,'provenance'), showWarnings = FALSE)
+  fn <- file.path(workingdir,'processed',seriesName,arrayName,'segments,cn.tsv')
   cat("sample_id","chromosome","start", "end", "value", "probes\n",sep="\t",file=fn,append = F)
 
   for (chrname in 1:23){
-    data<- read.table(sprintf('/Volumes/arraymapMirror/arraymap/hg19/%s/%s/probes,cn,chr%d.tsv',seriesName,cid,chrname),header=T)
+    data<- read.table(sprintf('/Volumes/arraymapMirror/arraymap/hg19/%s/%s/probes,cn,chr%d.tsv',seriesName,arrayName,chrname),header=T)
     cna1 <- CNA(genomdat=data$VALUE,
                 chrom=rep(chrname, length(data$VALUE)),
                 maploc=data$BASEPOS,
                 data.type="logratio",
-                sampleid=cid)
+                sampleid=arrayName)
     smoo1 <- smooth.CNA(cna1, smooth.region=5,smooth.SD.scale=2)
-    message(paste("Processed CN segmentation for sample:",cid,"Chr:",chrname))
+    message(paste("Processed CN segmentation for sample:",arrayName,"Chr:",chrname))
 
-    seg1 <- segment(smoo1, min.width=5, verbose=0, undo.splits='sd.undo',undo.SD=1)
+    seg1 <- segment(smoo1, min.width=5, verbose=0, undo.splits='sdundo',undo.SD=undosd)
     ss1 <- segments.summary(seg1)[c(1:4,6,5)]
     write.table(ss1, file=fn, sep="\t", quote=FALSE,
                 append = T, row.names=FALSE, col.names=F)
+    write.table(ss1, file=file.path(workingdir,'processed',seriesName,arrayName,'provenance','segments,cn.tsv'), sep="\t", quote=FALSE,
+                append = T, row.names=FALSE, col.names=F)
+
     }
-  rmGaps(workingdir,seriesName,cid,chipType)
+  logfile <- file.path(workingdir,'processed',seriesName,arrayName,'cnseg,log.txt')
+  cat(Sys.time(), sprintf("undosd = %s",undosd)) ## add more information later
+  rmGaps(workingdir,seriesName,arrayName,chipType,fn)
 }
 
-cnseg <- function(seriesName,arrayName=NULL,chipType,workingdir,sourcedir,memory,sdforce){
-  if (sdforce == 0) {
-    if (chipType %in% c('Mapping10K_Xba142')){
-      undosd = 2
-    } else if (chipType %in% c('Mapping50K_Hind240','Mapping50K_Xba240','Mapping250K_Nsp','Mapping250K_Sty','CytoScan750K_Array','GenomeWideSNP_5')){
-      undosd = 3
-    } else if (chipType %in% c('GenomeWideSNP_6','CytoScanHD_Array')){
-      undosd = 5
-    }
-  } else {
-    undosd = sdforce
-  }
-  print(paste(seriesName,arrayName,chipType,workingdir,sourcedir,memory,sdforce,undosd))
-  setOption(aromaSettings, "memory/ram", memory)
-  suppressWarnings(suppressMessages(library(DNAcopy)))
-  cids <- gsub(".CEL","",list.files(paste('/Volumes/arraymapIncoming/aroma/aromaRaw',seriesName,chipType,sep="/")))
-  dir.create(file.path(workingdir,'processed',seriesName), showWarnings = FALSE)
-  if (is.null(arrayName)) {
-    for (cid in cids){
-      cnsegPerArray(workingdir,seriesName, cid, undosd)
-    }
-  } else{
-    cnsegPerArray(workingdir,seriesName, arrayName, undosd)
-  }
+############################
+#### fracb segmentation ####
+############################
 
-  gc()
+fracBsegperArray <- function(seriesName,arrayName, chipType,workingdir){
 
-
-  ### remove the gaps of chromosomes ####
-  for (cid in cids){
-    rmGaps(workingdir,seriesName,cid,chipType)
-    ####
-  }
-
-}
-
-fracBseg <- function(seriesName,chipType,workingdir,sourcedir,memory){
-  setOption(aromaSettings, "memory/ram", memory)
-  suppressWarnings(suppressMessages(library(DNAcopy)))
-
-    fn <- paste0(workingdir,"/processed/",seriesName,"/",cid, '/fracBseg.tab')
+    fn <- file.path(workingdir,"processed",seriesName,arrayName,'fracBseg.tab')
     cat("ID","chrom","loc.start", "loc.end", "num.mark", "seg.mean","seg.sd","seg.median", "seg.mad\n",sep="\t",file=fn,append = F)
     for (chrname in 1:23){
-      data<- read.table(sprintf("%s/processed/%s/%s/fracB,chr%d.tab",workingdir,seriesName,cid,chrname),header=T)
-      #cat("Working on", cid, "\n", file=stderr())
+      data<- read.table(sprintf("%s/processed/%s/%s/fracB,chr%d.tab",workingdir,seriesName,arrayName,chrname),header=T)
+      #cat("Working on", arrayName, "\n", file=stderr())
       #for (chrname in c('X', 'Y', 22:1)) {
       #cat("\tProcessing", chrname, "\n", file=stderr())
       posn <-data$BASEPOS
@@ -91,30 +65,12 @@ fracBseg <- function(seriesName,chipType,workingdir,sourcedir,memory){
                   chrom=rep(chrname, length(yy)),
                   maploc=posn,
                   data.type="logratio",
-                  sampleid=cid)
+                  sampleid=arrayName)
 
-      smoo1 <- tryCatch({
-        smooth.CNA(cna1, smooth.region=10,smooth.SD.scale=4)
-      }, error = function(err) {
-        # error handler picks up where error was generated
-        print(paste("MY_ERROR:  ",err))
-        mbaf <- unlist(sapply(baf1, function(x) {
-          if (is.na(x) == FALSE) {
-            if (x < 0.5) x <- 1-x
-            if (x >= 0.5) x<-x
-          }
-          else x<-x
-        }))
-        yy <- mbaf
-        cna1 <- CNA(as.matrix(yy),
-                    chrom=rep(chrname, length(yy)),
-                    maploc=posn,
-                    data.type="logratio",
-                    sampleid=cid)
-         smooth.CNA(cna1, smooth.region=10,smooth.SD.scale=4)
-      },finally = {
-        message(paste("Processed fracB segmentation for sample:",cid,"Chr:",chrname))
-        })
+
+      smoo1 <- smooth.CNA(cna1, smooth.region=10,smooth.SD.scale=4)
+
+      message(paste("Processed fracB segmentation for sample:",arrayName,"Chr:",chrname))
 
       seg1 <- segment(smoo1, min.width=5, verbose=0)
       ss1 <- segments.summary(seg1)
@@ -122,12 +78,10 @@ fracBseg <- function(seriesName,chipType,workingdir,sourcedir,memory){
                   append = T, row.names=FALSE, col.names=F)
 
     }
-    rmGaps(workingdir,seriesName,cid,chipType)
   }
 
-rmGaps <- function(workingdir,seriesName,cid,chipType){
-  fn <- file.path(workingdir,'processed',seriesName,cid, 'segments,cn.tsv')
-
+rmGaps <- function(workingdir,seriesName,arrayName,chipType,filepath){
+  fn <- filepath
   file <- read.table(fn,header = T)
   gapfile <- read.table(sprintf("%s/PlatformInfo/%s_GapPos.tab",workingdir,chipType),header = T)
   newfile <- data.frame()

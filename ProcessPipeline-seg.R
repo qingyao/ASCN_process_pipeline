@@ -5,11 +5,8 @@ args = commandArgs(trailingOnly = TRUE)
 workingdir <- args[1]
 setwd(workingdir)
 seriesName <- args[2]
-cleanup <- args[3]
-sourcedir <- args[4]
-memory <- args[5]
-force <- as.numeric(args[6])
-sdforce <- as.numeric(args[7])
+sourcedir <- args[3]
+force <- as.numeric(args[4])
 Pipelinedir <- file.path(sourcedir,'Rpipeline')
 sourcefiles <- list.files(Pipelinedir)
 sapply(file.path(Pipelinedir,sourcefiles),source,.GlobalEnv)
@@ -38,49 +35,38 @@ for (chipType in chipTypes){
     arrayName = NULL,
     chipType = chipType,
     workingdir = workingdir,
-    sourcedir = sourcedir,
-    memory = memory,
-    sdforce = sdforce
+    undosd = 1
   )
 
   #check if all segments,cn.tsv are there for all arrays.
   i <- 1
-  incomplete <- 0
+  incomplete <- force
   notStarted <- 0
-  while(i <= length(cids)){
-    if(file.exists(file.path(remoteProcessPath,cids[i],'segments,cn.tsv'))) {
-      i <- i+1
-    } else {
-      if (i <= 3){
-        notStarted <- 1
-      } else{
-        incomplete <- 1
+  if (force == 0) {
+    newcids = vector()
+    for (i in 1:length(cids)){
+      if(!file.exists(file.path(remoteProcessPath,cids[i],'segments,cn.tsv'))) {
+        newcids <- c(newcids,cids[i])
       }
-      break
     }
+    cids <- newcids
+    if (length(cids) > 0) incomplete <- 1
   }
 
 
-  if (notStarted == 1){
-    ## if all have not started, do for all arrays
-    log <- c(log,tryCatch({do.call(cnseg,settings)},error=function(e){
-        message("Here's the original error message:")
-        message(e,"\n")
-        return(paste0("Error\t",format(Sys.time(), "%y-%m-%d %H:%M:%S"),"\t","CNsegmentation\t",seriesName,"\t",e))}))
-  } else if (incomplete == 1) {
-    ## if some have started, do for individual arrays
-    for (cid in cids) {
-      if(file.exists(file.path(remoteProcessPath,cid,'segments,cn.tsv'))) next
-      localsettings <- settings
-      localsettings[['arrayName']] <- cid
-      log <- c(log,tryCatch({do.call(cnseg,localsettings)},error=function(e){
-          message("Here's the original error message:")
-          message(e,"\n")
-          return(paste0("Error\t",format(Sys.time(), "%y-%m-%d %H:%M:%S"),"\t","CNsegmentation\t",seriesName,"\t",e))}))
+  if (incomplete == 1) {
+      ## if some have started, do for individual arrays
+      for (cid in cids) {
+        localsettings <- settings
+        localsettings[['arrayName']] <- cid
+        log <- c(log,tryCatch({do.call(cnsegPerArray,localsettings)},error=function(e){
+            message("Here's the original error message:")
+            message(e,"\n")
+            return(paste0("Error\t",format(Sys.time(), "%y-%m-%d %H:%M:%S"),"\t","CNsegmentation\t",seriesName,"\t",e))}))
+      }
+    } else {
+      next
     }
-  } else {
-    next
-  }
 
-}
+  }
 write.table(paste0(log),paste0(workingdir,"/processed/aroma_",format(Sys.time(), "%y-%m-%d"),".log"),quote=F,row.names = F,col.names = F,append=T)
