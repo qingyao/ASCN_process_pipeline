@@ -3,8 +3,11 @@
 ##########################
 
 suppressWarnings(suppressMessages(library(plyr)))
-
-BafAnalysis <- function(seriesName,chipType,workingdir,sourcedir,memory) {
+cids="GSM255173"
+seriesName = "GSE10099"
+workingdir = "/Users/pgweb/arraydata/aroma/hg19"
+chipType="GPL2005"
+BafAnalysis <- function(seriesName,chipType,arrayName,workingdir) {
   options("scipen"=100, "digits"=4)
 
   # cids <- gsub(".CEL","",list.files(paste(getwd(),'rawData',seriesName,chipType,sep="/")))
@@ -14,11 +17,12 @@ BafAnalysis <- function(seriesName,chipType,workingdir,sourcedir,memory) {
   # cids <- cids[1]
   for (cid in cids){
     cat("Processing sample:",cid,'\n')
-    filelist <- list.files(paste(getwd(),"processed",seriesName,cid,sep="/"))
+    filelist <- list.files(paste(workingdir,'processed',seriesName,cid,sep="/"))
     cnfile <- filelist[grep("fracB,chr",filelist)]
     allfracb <- data.frame()
     for (j in cnfile) {
-      allfracb <- rbind(allfracb,read.table(paste(workingdir,"processed",seriesName,cid,j,sep="/"),header=TRUE))
+      # allfracb <- rbind(allfracb,read.table(paste(workingdir,"processed",seriesName,cid,j,sep="/"),header=TRUE))
+      allfracb <- rbind(allfracb,read.table(paste(workingdir,'processed',seriesName,cid,j,sep="/"),header=TRUE))
     }
 
     ## read the segments,fracB file; pre-filtering the segments.
@@ -51,55 +55,71 @@ BafAnalysis <- function(seriesName,chipType,workingdir,sourcedir,memory) {
 
     Out <- sprintf("%s/processed/%s/%s/segments,fracb.tsv",workingdir,seriesName,cid)
     cat("ID","chr","loc.start","loc.end","fracB\n",sep="\t",file=Out,append=FALSE)
+    pdf('~/Desktop/plots_tmp.pdf')
     for (chr in 1:23){
       #cat(sprintf("Chr%d \n",chr),file=Out,append=TRUE)
-      seg <- subset(allseg, allseg$chrom ==chr & allseg$loc.end - allseg$loc.start > 1000000 & allseg$num.mark >0)
+      seg <- subset(allseg, allseg$chrom ==chr & allseg$num.mark >0) #& allseg$loc.end - allseg$loc.start > 1000000 
       ##remove extreme values
       fracb <- subset(allfracb, allfracb$CHRO ==chr)
-
+      
       for (j in 1:nrow(seg)){
         range <- c(seg[j,"loc.start"], seg[j,"loc.end"])
         id <- which(fracb$BASEPOS>=range[1] & fracb$BASEPOS< range[2])
         subfracb <- fracb[id,]
         if (nrow(subfracb) <= 5) next
-        nbin <- 50
-        bin <- seq(0,1,length.out = nbin)
-        k <- vector()
-        for (i in 1:(nbin-1)) {
-          k[i] <- sum(subfracb$VALUE < bin[i+1] & subfracb$VALUE > bin[i],na.rm = T)
-        }
-
-        period <- 10
-        kn <- vector()
-        for(i in 1:(nbin-period)){
-          kn[i] <- mean(k[i:(i+period-1)])
-        }
-        kn <- log2(kn+15)
-
-        ext <- nbin/10
-        l <- length(kn)
-        kn2 <- kn[-c(1:ceiling(ext/2),(l-ceiling(ext/2)+1):l)]
-
-        m<- mean(kn2)
-        Vec <- which(kn2>m)
-        if (length(Vec) == 0 & mean(kn) > m) peak <- c(0.025,0.975)
-        else{
-            Breaks <- sort(c(1, which(diff(Vec) != 1),which(diff(Vec) != 1)+1, length(Vec)))
-            Ranges <- matrix(Vec[Breaks],ncol=2,byrow=T)
-
-            # find midpoint
-            peak <- apply(Ranges,1,mean)
-            peak <- peak/(nbin/10*9-period)
-            peak <- sort(c(peak,1-peak))
-            peak <- rm.near.dy(peak)
-        }
+        # ## binning
+        # nbin <- 50
+        # bin <- seq(0,1,length.out = nbin)
+        # k <- vector()
+        # for (i in 1:(nbin-1)) {
+        #   k[i] <- sum(subfracb$VALUE < bin[i+1] & subfracb$VALUE > bin[i],na.rm = T)
+        # }
+        # 
+        # #moving average
+        # period <- 10
+        # kn <- vector()
+        # for(i in 1:(nbin-period)){
+        #   kn[i] <- mean(k[i:(i+period-1)])
+        # }
+        # #log transform
+        # kn <- log2(kn+15)
+        # 
+        # ext <- nbin/10
+        # l <- length(kn)
+        # kn2 <- kn[-c(1:ceiling(ext/2),(l-ceiling(ext/2)+1):l)]
+        # 
+        # m<- mean(kn2)
+        # Vec <- which(kn2>m)
+        # if (length(Vec) == 0 & mean(kn) > m) peak <- c(0.025,0.975)
+        # else{
+        #     Breaks <- sort(c(1, which(diff(Vec) != 1),which(diff(Vec) != 1)+1, length(Vec)))
+        #     Ranges <- matrix(Vec[Breaks],ncol=2,byrow=T)
+        # 
+        #     # find midpoint
+        #     peak <- apply(Ranges,1,mean)
+        #     peak <- peak/(nbin/10*9-period)
+        #     peak <- sort(c(peak,1-peak))
+        #     peak <- rm.near.dy(peak)
+        # }
+        dens <- density(subfracb$VALUE)
+        plot(dens)
+        require(graphics)
+        y <- dens$y
+        x <- dens$x
+        require(pastecs)
+        tp<-turnpoints(y)
+        #plot
+        points(dens$x[tp$peaks],dens$y[tp$peaks],col="red")
+        abline(mean(y),0)
+        abline(mean(y)-sd(y),0,col="red")
+        peak <- x[tp$peaks]
         if (length(peak) == 0) next
         for (line in 1:length(peak)){
           cat(cid,chr,range,peak[line],'\n',sep="\t",file=Out,append=TRUE)
         }
       }
     }
-    # dev.off()
+    dev.off()
   }
 }
 
