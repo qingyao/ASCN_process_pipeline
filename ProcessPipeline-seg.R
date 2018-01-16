@@ -55,7 +55,6 @@ for (chipType in chipTypes){
 
 
   if (incomplete == 1) {
-      ## if some have started, do for individual arrays
       for (cid in cids) {
         localsettings <- settings
         localsettings[['arrayName']] <- cid

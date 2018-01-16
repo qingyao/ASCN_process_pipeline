@@ -30,7 +30,7 @@ cnsegPerArray <- function(workingdir,seriesName, arrayName, undosd, chipType){
 
     }
   logfile <- file.path(workingdir,'processed',seriesName,arrayName,'cnseg,log.txt')
-  cat(Sys.time(), sprintf("undosd = %s",undosd)) ## add more information later
+  cat(Sys.time(), sprintf("undosd = %s",undosd)) ## add more information later ??not written to log file, and no new line
   rmGaps(workingdir,seriesName,arrayName,chipType,fn)
 }
 

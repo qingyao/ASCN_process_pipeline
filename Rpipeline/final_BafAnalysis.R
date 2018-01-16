@@ -7,26 +7,25 @@ cids="GSM255173"
 seriesName = "GSE10099"
 workingdir = "/Users/pgweb/arraydata/aroma/hg19"
 chipType="GPL2005"
-BafAnalysis <- function(seriesName,chipType,arrayName,workingdir) {
+BafAnalysis <- function(seriesName,chipType,arrayName,remotedir) {
   options("scipen"=100, "digits"=4)
 
   # cids <- gsub(".CEL","",list.files(paste(getwd(),'rawData',seriesName,chipType,sep="/")))
-  remoteworkingdir = "/Volumes/arraymapMirror/arraymap/hg19/"
+  # remoteworkingdir = "/Volumes/arraymapMirror/arraymap/hg19/"
   remoterawdir = "/Volumes/arraymapIncoming/aroma/aromaRaw/"
   cids <- gsub(".CEL","",list.files(paste(remoterawdir,seriesName,chipType,sep="/")))
   # cids <- cids[1]
   for (cid in cids){
     cat("Processing sample:",cid,'\n')
-    filelist <- list.files(paste(workingdir,'processed',seriesName,cid,sep="/"))
+    filelist <- list.files(paste(remotedir,seriesName,cid,sep="/"))
     cnfile <- filelist[grep("fracB,chr",filelist)]
     allfracb <- data.frame()
     for (j in cnfile) {
-      # allfracb <- rbind(allfracb,read.table(paste(workingdir,"processed",seriesName,cid,j,sep="/"),header=TRUE))
-      allfracb <- rbind(allfracb,read.table(paste(workingdir,'processed',seriesName,cid,j,sep="/"),header=TRUE))
+      allfracb <- rbind(allfracb,read.table(paste(remotedir,seriesName,cid,j,sep="/"),header=TRUE))
     }
 
     ## read the segments,fracB file; pre-filtering the segments.
-    allseg <- read.table(sprintf("%s/%s/%s/fracBseg.tab",remoteworkingdir,seriesName,cid),header=T)
+    allseg <- read.table(sprintf("%s/%s/%s/fracBseg.tab",remotedir,seriesName,cid),header=T)
     #dynamic filtering, compare each time the new segment mean with the next one
     ss4 <- data.frame()
     for (chr in 1:23) {
@@ -53,15 +52,14 @@ BafAnalysis <- function(seriesName,chipType,arrayName,workingdir) {
     allseg <- ss4
 
 
-    Out <- sprintf("%s/processed/%s/%s/segments,fracb.tsv",workingdir,seriesName,cid)
+    Out <- sprintf("%s/%s/segments,fracb.tsv",remotedir,seriesName,cid)
     cat("ID","chr","loc.start","loc.end","fracB\n",sep="\t",file=Out,append=FALSE)
-    pdf('~/Desktop/plots_tmp.pdf')
     for (chr in 1:23){
       #cat(sprintf("Chr%d \n",chr),file=Out,append=TRUE)
-      seg <- subset(allseg, allseg$chrom ==chr & allseg$num.mark >0) #& allseg$loc.end - allseg$loc.start > 1000000 
+      seg <- subset(allseg, allseg$chrom ==chr & allseg$num.mark >0) #& allseg$loc.end - allseg$loc.start > 1000000
       ##remove extreme values
       fracb <- subset(allfracb, allfracb$CHRO ==chr)
-      
+
       for (j in 1:nrow(seg)){
         range <- c(seg[j,"loc.start"], seg[j,"loc.end"])
         id <- which(fracb$BASEPOS>=range[1] & fracb$BASEPOS< range[2])
@@ -74,7 +72,7 @@ BafAnalysis <- function(seriesName,chipType,arrayName,workingdir) {
         # for (i in 1:(nbin-1)) {
         #   k[i] <- sum(subfracb$VALUE < bin[i+1] & subfracb$VALUE > bin[i],na.rm = T)
         # }
-        # 
+        #
         # #moving average
         # period <- 10
         # kn <- vector()
@@ -83,18 +81,18 @@ BafAnalysis <- function(seriesName,chipType,arrayName,workingdir) {
         # }
         # #log transform
         # kn <- log2(kn+15)
-        # 
+        #
         # ext <- nbin/10
         # l <- length(kn)
         # kn2 <- kn[-c(1:ceiling(ext/2),(l-ceiling(ext/2)+1):l)]
-        # 
+        #
         # m<- mean(kn2)
         # Vec <- which(kn2>m)
         # if (length(Vec) == 0 & mean(kn) > m) peak <- c(0.025,0.975)
         # else{
         #     Breaks <- sort(c(1, which(diff(Vec) != 1),which(diff(Vec) != 1)+1, length(Vec)))
         #     Ranges <- matrix(Vec[Breaks],ncol=2,byrow=T)
-        # 
+        #
         #     # find midpoint
         #     peak <- apply(Ranges,1,mean)
         #     peak <- peak/(nbin/10*9-period)
@@ -119,7 +117,6 @@ BafAnalysis <- function(seriesName,chipType,arrayName,workingdir) {
         }
       }
     }
-    dev.off()
   }
 }
 
