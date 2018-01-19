@@ -15,8 +15,10 @@ import finder_colors as color
 @click.option('-m','--memory',default=100,help='memory setup for aroma pipelines, for <= 64GB machine use 50')
 @click.option('-e','--error',default=0,help='if 1, will run the series which contains error')
 @click.option('-f','--force',default=0,help='if 1, will force rerun for selected series')
-@click.option('-o','--option',default=0,help="'probe' for raw data to probes; 'seg' for initial segmentation; 'reseg' for evaluation of cn segments and possible re-segmentation")
+@click.option('-o','--option',default='noprocess',help="'probe' for raw data to probes; 'seg' for initial segmentation; 'reseg' for evaluation of cn segments and possible re-segmentation")
 def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,option):
+    if option == 'noprocess':
+        sys.exit('no process option specified.')
     p = Pool(processes=threads)
     serieslist=[]
     if error == 1:
@@ -85,8 +87,7 @@ def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,
             shellcommand = 'R --vanilla <{0}/ProcessPipeline-seg.R --args {1} {2} {0} {3} &>/dev/null'.format(sourcedir,workingdir,seriesname,force)
         elif option == 'reseg':
             shellcommand = 'R --vanilla <{0}/ProcessPipeline-reseg.R --args {1} {2} {0} &>/dev/null'.format(sourcedir,workingdir,seriesname)
-        else:
-            sys.exit("No process option specified.")
+
 
         run(shellcommand,shell=True)
 

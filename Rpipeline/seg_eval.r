@@ -1,8 +1,9 @@
 suppressWarnings(suppressMessages(library(genlasso)))
 options("scipen"=100, "digits"=4)
 
-adjustMedian <- function(remotedir,seriesName,arrayName){
-  segfile <- read.table(file.path(remotedir,seriesName,arrayName,'provenance/segments,cn.tsv'),header = T,stringsAsFactors = F)
+adjustMedian <- function(remotedir,seriesName,arrayName,workingdir,chipType){
+  segfile <- read.table(file.path(remotedir,seriesName,arrayName,'provenance/segments,cn.tsv'),header = F,stringsAsFactors = F)
+  colnames(segfile) <- c('sample_id','chromosome','start','end','value','probes')
   probefile <- read.table(file.path(remotedir,seriesName,arrayName,'probes,cn.tsv'),header = T,stringsAsFactors = F)
   med <- median(segfile[,5])
   segfile[,5] <-segfile[,5]-med
@@ -10,11 +11,11 @@ adjustMedian <- function(remotedir,seriesName,arrayName){
   write.table(segfile,file.path(remotedir,seriesName,arrayName,'segments,cn.tsv'), sep="\t", quote=FALSE,row.names=FALSE)
   write.table(probefile,file.path(remotedir,seriesName,arrayName,'probes,cn.tsv'), sep="\t", quote=FALSE,row.names=FALSE)
   logfile <- file.path(remotedir,seriesName,arrayName,'cnseg,log.txt')
-  cat(Sys.time(), sprintf("adjusted probe and segment values with median: %s \n",med), file=logfile,append = F)
+  cat(as.character(Sys.time()), sprintf("adjusted probe and segment values with median: %s \n",med), file=logfile,append = F)
 }
 
-getLmd <- function(remotedir,seriesName,arrayName){
-  segfile <- read.table(file.path(remotedir,seriesName,arrayName,'segments,cn.tsv'),header = T,stringsAsFactors = F)
+getLmd <- function(remotedir,seriesName,arrayName,workingdir,chipType){
+  segfile <- read.table(file.path(remotedir,seriesName,arrayName,'provenance/segments,cn.tsv'),header = T,stringsAsFactors = F)
   noseg <- nrow(segfile)
   if (noseg < 200) {
     l <- 0
@@ -28,16 +29,17 @@ getLmd <- function(remotedir,seriesName,arrayName){
   return (l)
 }
 
-getGP <- function() {"1e4"}
+getGP <- function(remotedir,seriesName,arrayName,workingdir,chipType) {"1e4"}
 
-stepFilter <- function(remotedir,seriesName,arrayName,chipType,gp,lmd){
+stepFilter <- function(remotedir,seriesName,arrayName,workingdir,chipType,gp,lmd){
   log <- vector()
-  segStep <- stepwiseDifference(as.numeric(gp),file.path(remotedir,seriesName,arrayName,'segments,cn.tsv'))
+  segStep <- stepwiseDifference(as.numeric(gp),file.path(remotedir,seriesName,arrayName,'provenance/segments,cn.tsv'))
   # segStep <- stepwiseDifference(as.numeric(gp),file.path(remotedir,seriesName,arrayName,'segments,cn,5_sdundo_1.tsv'))
   segStep <- segStep[,c(2:ncol(segStep))]
 
   x = segStep[,5]
   idx <- calculateLasso(segStep,lmd)[[2]]
+#  print(segStep[idx,])
   lmd <- calculateLasso(segStep,lmd)[[3]]
   wm <- calculateWeightedMean(idx,segStep)
   ##chipType CHRO chr_start chr_end probes
@@ -52,7 +54,7 @@ stepFilter <- function(remotedir,seriesName,arrayName,chipType,gp,lmd){
         log <- c(log,'stepFilter involves chromosomes merging on chr1!')
         chrPassed <- 1 : segStep[idx[i],2]
         for (j in 1:(length(chrPassed)-1)){
-            tmpseg <- segStep[1,]
+            tmpseg <- segStep[idx[1],]
             tmpseg[,2] <- chrPassed[j]
             tmpseg[,c(3,4)] <- chrPos[chrPos[,2]==chrPassed[j],c(3,4)]
             tmpseg[,5] <- wm[i]
@@ -61,14 +63,14 @@ stepFilter <- function(remotedir,seriesName,arrayName,chipType,gp,lmd){
             countProbes <- countProbes + tmpseg[,6]
           }
         }
-       else{
-        tmpseg <- vector()
-        tmpseg <- segStep[idx[i],]
-        tmpseg[,3] <- segStep[1,3]
-        tmpseg[,5] <- wm[i]
-        tmpseg[,6] <- sum(segStep[c(1:idx[i]),6])-countProbes
-        newseg<- rbind(newseg, tmpseg)
-      }
+
+      tmpseg <- vector()
+      tmpseg <- segStep[idx[i],]
+      tmpseg[,3] <- segStep[1,3]
+      tmpseg[,5] <- wm[i]
+      tmpseg[,6] <- sum(segStep[c(1:idx[i]),6])-countProbes
+      newseg<- rbind(newseg, tmpseg)
+
     }
     ## new segment and previous segment on the same chromosome
     else if (segStep[idx[i],2] == segStep[idx[i-1],2]){
@@ -81,7 +83,7 @@ stepFilter <- function(remotedir,seriesName,arrayName,chipType,gp,lmd){
     }
     ## new segment starts with a new chromosome
     else if (segStep[idx[i],2] != segStep[idx[i-1],2]){
-      ## new segment starts with another chromosome instead of the next one
+      ## new segment starts with another chromosome instead of the same one
         countProbes <- 0 ## count probes that are in the hidden segments
         chrPassed <- segStep[idx[i-1],2] : segStep[idx[i],2]
         usedProbes <- sum(newseg[newseg[,2]==chrPassed[1],6]) ## probes used in the segments in that chromosome
@@ -94,7 +96,7 @@ stepFilter <- function(remotedir,seriesName,arrayName,chipType,gp,lmd){
         countProbes <- countProbes + tmpseg[,6]
         ## the chromosome is not the immediate next one
         if (length(chrPassed) > 2){
-          log <- c(log,sprintf('stepFilter involves chromosomes merging between chr%s and chr%s!',segStep[idx[i],2],segStep[idx[i-1],2]))
+          log <- c(log,sprintf('stepFilter involves chromosomes merging between chr%s and chr%s!',segStep[idx[i-1],2],segStep[idx[i],2]))
           for (j in 2:(length(chrPassed)-1)){
             tmpseg <- segStep[idx[i-1],]
             tmpseg[,2] <- chrPassed[j]
@@ -116,8 +118,8 @@ stepFilter <- function(remotedir,seriesName,arrayName,chipType,gp,lmd){
   }
   write.table(newseg, file.path(remotedir,seriesName,arrayName,'segments,cn.tsv'), sep="\t", quote=FALSE,row.names=FALSE)
   logfile <- file.path(remotedir,seriesName,arrayName,'cnseg,log.txt')
-  cat(Sys.time(), 'stepFilter warning:', paste(log, collapse=';'), sep='\t', file=logfile,append = T)
-  cat(Sys.time(), sprintf("filtered segments with gap size = %s, lambda = %s, previous %s segments, now %s segments \n",gp,lmd,length(x),nrow(newseg)),sep='\t',file=logfile,append = T)
+  cat(as.character(Sys.time()), 'stepFilter warning:', paste(log, collapse='; '), '\n',sep='\t', file=logfile,append = T)
+  cat(as.character(Sys.time()), sprintf("filtered segments with gap size = %s, lambda = %s, previous %s segments, now %s segments, %s indices \n",gp,lmd,length(x),nrow(newseg),length(idx)),sep='\t',file=logfile,append = T)
 }
 
 calculateLasso <- function(segmentData, lmd) {
@@ -143,6 +145,7 @@ calculateWeightedMean <- function(idx, segmentData) {
                     weighted.mean(segmentData$value[lasti:nrow(segmentData)],w=segmentData$end[lasti:nrow(segmentData)]-segmentData$start[lasti:nrow(segmentData)]))
 
     lasti <- idx[i]+1}
+  wm <- round(wm, 4)
   return (wm)
 }
 
@@ -183,7 +186,7 @@ statsSmallSeg <- function(gapSizes,segmentFile){
   return(smallSeg)
 }
 
-rmGaps <- function(remotedir,seriesName,arrayName,chipType){
+rmGaps <- function(remotedir,seriesName,arrayName,workingdir,chipType){
   fn <- file.path(remotedir,seriesName,arrayName,'segments,cn.tsv')
   file <- read.table(fn,header = T, stringsAsFactors = F)
   gapfile <- read.table(sprintf("%s/PlatformInfo/%s_GapPos.tab",workingdir,chipType),header = T)
@@ -198,7 +201,7 @@ rmGaps <- function(remotedir,seriesName,arrayName,chipType){
         newrow$start <- gapend
         subfile[row,]$end  <- gapstart
         n <- subfile[row,]$probes
-        RatioBefAft <- (gapstart - subfile[row,]$start) / (subfile[row,]$end - gapend)
+        RatioBefAft <- (gapstart - subfile[row,]$start) / (newrow$end - gapend)
         subfile[row,]$probes <- round(RatioBefAft/(RatioBefAft+1) * n)
         newrow$probes <- round(1/(RatioBefAft+1) * n)
         if (row < nrow(subfile)) {
@@ -219,7 +222,8 @@ rmGaps <- function(remotedir,seriesName,arrayName,chipType){
     }
     newfile <- rbind(newfile,subfile)
   }
+  newfile <- newfile[newfile$probes!=0,]
   write.table(newfile, file=fn, sep="\t", quote=FALSE, row.names=FALSE, col.names=T)
   logfile <- file.path(remotedir,seriesName,arrayName,'cnseg,log.txt')
-  cat(Sys.time(), "removed centromere gaps", file=logfile,append = F)
+  cat(as.character(Sys.time()), sprintf("removed centromere gaps, now %s segments", nrow(newfile)), file=logfile,append = T)
 }

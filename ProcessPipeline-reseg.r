@@ -7,7 +7,7 @@ setwd(workingdir)
 seriesName <- args[2]
 sourcedir <- args[3]
 Pipelinedir <- file.path(sourcedir,'Rpipeline')
-source(file.path(sourcedir,'seg_eval.r'))
+source(file.path(Pipelinedir,'seg_eval.r'))
 
 log <- vector()
 remotedir <- paste0("/Volumes/arraymapIncoming/aroma/aromaRaw/",seriesName)
@@ -34,12 +34,12 @@ for (chipType in chipTypes){
     localsettings <- settings
     localsettings[['arrayName']] <- cid
     log <- c(log,tryCatch({
-          do.call(adjustMedian,localsettings)
+#          do.call(adjustMedian,localsettings)
           lmd <- do.call(getLmd,localsettings)
           gp <- do.call(getGP,localsettings)
-          localsettings <- c(localsettings,lmd=lmd,gp=gp)
-          do.call(stepFilter,localsettings)
-          do.call(rmGap,localsettings)
+          filtersettings <- c(localsettings,lmd=lmd,gp=gp)
+          do.call(stepFilter,filtersettings)
+          do.call(rmGaps,localsettings)
         }, error=function(e){
           message('Error!',e,'\n')
           return(paste0("Error\t",format(Sys.time(), "%y-%m-%d %H:%M:%S"),"\t","\t",seriesName,"\t",e))}

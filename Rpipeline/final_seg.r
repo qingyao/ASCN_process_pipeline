@@ -10,7 +10,8 @@ cnsegPerArray <- function(workingdir,seriesName, arrayName, undosd, chipType){
   dir.create(file.path(workingdir,'processed',seriesName,arrayName,'provenance'), showWarnings = FALSE)
   fn <- file.path(workingdir,'processed',seriesName,arrayName,'segments,cn.tsv')
   cat("sample_id","chromosome","start", "end", "value", "probes\n",sep="\t",file=fn,append = F)
-
+  fp <- file.path(workingdir,'processed',seriesName,arrayName,'provenance','segments,cn.tsv')
+  cat("sample_id","chromosome","start", "end", "value", "probes\n",sep="\t",file=fp,append = F)
   for (chrname in 1:23){
     data<- read.table(sprintf('/Volumes/arraymapMirror/arraymap/hg19/%s/%s/probes,cn,chr%d.tsv',seriesName,arrayName,chrname),header=T)
     cna1 <- CNA(genomdat=data$VALUE,
@@ -25,13 +26,13 @@ cnsegPerArray <- function(workingdir,seriesName, arrayName, undosd, chipType){
     ss1 <- segments.summary(seg1)[c(1:4,6,5)]
     write.table(ss1, file=fn, sep="\t", quote=FALSE,
                 append = T, row.names=FALSE, col.names=F)
-    write.table(ss1, file=file.path(workingdir,'processed',seriesName,arrayName,'provenance','segments,cn.tsv'), sep="\t", quote=FALSE,
+    write.table(ss1, file=fp, sep="\t", quote=FALSE,
                 append = T, row.names=FALSE, col.names=F)
 
     }
   logfile <- file.path(workingdir,'processed',seriesName,arrayName,'cnseg,log.txt')
   cat(Sys.time(), sprintf("undosd = %s",undosd)) ## add more information later ??not written to log file, and no new line
-  rmGaps(workingdir,seriesName,arrayName,chipType,fn)
+  rmGaps(workingdir,seriesName,arrayName,chipType)
 }
 
 ############################
@@ -80,8 +81,8 @@ fracBsegperArray <- function(seriesName,arrayName, chipType,workingdir){
     }
   }
 
-rmGaps <- function(workingdir,seriesName,arrayName,chipType,filepath){
-  fn <- filepath
+rmGaps <- function(workingdir,seriesName,arrayName,chipType){
+  fn <- file.path(workingdir,'processed',seriesName,arrayName,'segments,cn.tsv')
   file <- read.table(fn,header = T)
   gapfile <- read.table(sprintf("%s/PlatformInfo/%s_GapPos.tab",workingdir,chipType),header = T)
   newfile <- data.frame()
@@ -91,41 +92,27 @@ rmGaps <- function(workingdir,seriesName,arrayName,chipType,filepath){
     gapend <- gapfile$Gap_end[chr]
     for (row in 1:nrow(subfile)) {
       if ((subfile[row,]$start) < gapstart & (subfile[row,]$end) > gapend) {
-        # emptyrow <- subfile[row,]
-        # emptyrow$start <- gapstart
-        # emptyrow$end <- gapend
-        # emptyrow[,5:ncol(emptyrow)] <- rep(0,ncol(emptyrow)-4)
         newrow <- subfile[row,]
         newrow$start <- gapend
         subfile[row,]$end  <- gapstart
         n <- subfile[row,]$probes
-        subfile[row,]$probes <- n/2
-        newrow$probes <- n/2
+        RatioBefAft <- (gapstart - subfile[row,]$start) / (subfile[row,]$end - gapend)
+        subfile[row,]$probes <- round(RatioBefAft/(RatioBefAft+1) * n)
+        newrow$probes <- round(1/(RatioBefAft+1) * n)
         if (row < nrow(subfile)) {
-
-          subfile <- rbind(subfile[1:row,],newrow,subfile[(row+1):nrow(subfile),])#emptyrow,
-          next
-        }
+            subfile <- rbind(subfile[1:row,], newrow, subfile[(row+1):nrow(subfile),])
+            next
+          }
         else {
-          subfile <- rbind(subfile[1:row,], newrow)#emptyrow,
+          subfile <- rbind(subfile[1:row,], newrow)
           next
         }
       }
       else if((subfile[row,]$start) < gapstart & subfile[row,]$end <= gapend &subfile[row,]$end > gapstart) {
-        # emptyrow <- subfile[row,]
-        # emptyrow$start <- gapstart
-        # emptyrow$end <- gapend
-        # emptyrow[,5:ncol(emptyrow)] <- rep(0,ncol(emptyrow)-4)
         subfile[row,]$end <-gapstart
-        subfile <- rbind(subfile[1:row,], subfile[(row+1):nrow(subfile),])#emptyrow,
       }
       else if ((subfile[row,]$start) >=gapstart & (subfile[row,]$start) < gapend & subfile[row,]$end > gapend) {
-        # emptyrow <- subfile[row,]
-        # emptyrow$start <- gapstart
-        # emptyrow$end <- gapend
-        # emptyrow[,5:ncol(emptyrow)] <- rep(0,ncol(emptyrow)-4)
         subfile[row,]$start <-gapend
-        subfile <- rbind(subfile[1:(row-1),], subfile[(row):nrow(subfile),])#emptyrow,
       } else next
     }
     newfile <- rbind(newfile,subfile)
