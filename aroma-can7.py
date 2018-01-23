@@ -15,7 +15,10 @@ import finder_colors as color
 @click.option('-e','--error',default=0,help='if 1, will run the series which contains error')
 @click.option('-f','--force',default=0,help='if 1, will force rerun for selected series')
 @click.option('-u','--update',default=0,help='renew the list of series from metadata')
-def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,update):
+@click.option('-o','--option',default='noprocess',help="'probe' for raw data to probes; 'seg' for initial segmentation; 'reseg' for evaluation of cn segments and possible re-segmentation")
+def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,update,option):
+    if option == 'noprocess':
+        sys.exit('no process option specified.')
     p = Pool(processes=threads)
 
     logfilename = '%s/%s/%sH.log' % (workingdir,'processed',time.strftime('%Y-%m-%d,%H'))
@@ -90,8 +93,13 @@ def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,
         logger.debug('Machine: %s\tSeries: %s'%(machine, seriesname))
         logger.info('Started series: '+seriesname)
         seriesStart = time.time()
-        shellcommand = 'R --vanilla <{0}/ProcessPipeline-seg.R --args {1} {2} {0} {3} &>/dev/null'.format(sourcedir,workingdir,seriesname,force)
-        # shellcommand = 'R --vanilla <{0}/ProcessPipeline-probe.R --args {1} {2} {3} {0} {4} {5} &>/dev/null'.format(sourcedir,workingdir,seriesname,cleanup,memory,force)
+        if option == 'probe':
+            shellcommand = 'R --vanilla <{0}/ProcessPipeline-probe.R --args {1} {2} {3} {0} {4} {5} &>/dev/null'.format(sourcedir,workingdir,seriesname,cleanup,memory,force)
+        elif option == 'seg':
+            shellcommand = 'R --vanilla <{0}/ProcessPipeline-seg.R --args {1} {2} {0} {3} &>/dev/null'.format(sourcedir,workingdir,seriesname,force)
+        elif option == 'reseg':
+            shellcommand = 'R --vanilla <{0}/ProcessPipeline-reseg.R --args {1} {2} {0} &>/dev/null'.format(sourcedir,workingdir,seriesname)
+
         run(shellcommand,shell=True)
 
         seriesTime =round(time.time()-seriesStart)
