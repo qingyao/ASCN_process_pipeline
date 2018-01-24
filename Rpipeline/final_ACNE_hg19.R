@@ -64,7 +64,7 @@ ACNE <- function(seriesName,chipType,workingdir,sourcedir,memory) {
       fracB <-cbind(ID,fracB)
       colnames(fracB)[2:4] <- c("CHRO","BASEPOS","VALUE")
       fracB$VALUE <- round(fracB$VALUE,4)
-      write.table(fracB,sprintf("%s/fracB,chr%d.tab",Plotpath,chromosome),quote=F,sep="\t",row.names = F)
+      write.table(fracB,sprintf("%s/probes,fracb,chr%d.tsv",Plotpath,chromosome),quote=F,sep="\t",row.names = F)
     }
 
   }

@@ -3,56 +3,51 @@
 ##########################
 
 suppressWarnings(suppressMessages(library(plyr)))
-cids="GSM255173"
-seriesName = "GSE10099"
-workingdir = "/Users/pgweb/arraydata/aroma/hg19"
-chipType="GPL2005"
-BafAnalysis <- function(seriesName,chipType,arrayName,remotedir) {
+
+BafAnalysis <- function(seriesName,chipType,arrayName,remotedir,filename,workingdir) {
   options("scipen"=100, "digits"=4)
 
-  # cids <- gsub(".CEL","",list.files(paste(getwd(),'rawData',seriesName,chipType,sep="/")))
-  # remoteworkingdir = "/Volumes/arraymapMirror/arraymap/hg19/"
-  remoterawdir = "/Volumes/arraymapIncoming/aroma/aromaRaw/"
-  cids <- gsub(".CEL","",list.files(paste(remoterawdir,seriesName,chipType,sep="/")))
+  # remoterawdir = "/Volumes/arraymapIncoming/aroma/aromaRaw/"
+  # cids <- gsub(".CEL","",list.files(paste(remoterawdir,seriesName,chipType,sep="/")))
   # cids <- cids[1]
-  for (cid in cids){
-    cat("Processing sample:",cid,'\n')
-    filelist <- list.files(paste(remotedir,seriesName,cid,sep="/"))
+  # for (cid in cids){
+    cat("Processing sample:",arrayName,'\n')
+    filelist <- list.files(paste(remotedir,seriesName,arrayName,sep="/"))
     cnfile <- filelist[grep("fracB,chr",filelist)]
     allfracb <- data.frame()
     for (j in cnfile) {
-      allfracb <- rbind(allfracb,read.table(paste(remotedir,seriesName,cid,j,sep="/"),header=TRUE))
+      allfracb <- rbind(allfracb,read.table(paste(remotedir,seriesName,arrayName,j,sep="/"),header=TRUE))
     }
 
     ## read the segments,fracB file; pre-filtering the segments.
-    allseg <- read.table(sprintf("%s/%s/%s/fracBseg.tab",remotedir,seriesName,cid),header=T)
+    allseg <- read.table(sprintf("%s/%s/%s/fracbseg.tsv",remotedir,seriesName,arrayName),header=T)
     #dynamic filtering, compare each time the new segment mean with the next one
-    ss4 <- data.frame()
-    for (chr in 1:23) {
-      rows <- nrow(ss4)
-      ss2 <- subset(allseg,allseg$chrom==chr)
-      #ss2 <- subset(ss2,ss2$num.mark>20)
-      count=0
-      ss4 <- rbind(ss4,ss2[1,])
-      if (nrow(ss2) >1) {
-        for (i in 1:(nrow(ss2)-1)){
-          lines <- abs(ss2$seg.mean[i+1] - ss4$seg.mean[rows+i-count]) > 0.035
-          if (lines == 1) ss4 <- rbind(ss4,ss2[i+1,])
-          if (lines == 0) {
-            ss4$loc.end [rows+i-count] <- ss2$loc.end[i+1]
-            ss4$seg.mean[rows+i-count] <- ss2$seg.mean[i+1]
-            ss4$num.mark[rows+i-count] <- ss4$num.mark[rows+i-count]+ss2$num.mark[i+1]
-            #ss4[rows+i-1-count,4:ncol(ss2)] <- ss2[i,4:ncol(ss2)]
-            count= count+1
-          }
-        }
-      }
+    # ss4 <- data.frame()
+    # for (chr in 1:23) {
+    #   rows <- nrow(ss4)
+    #   ss2 <- subset(allseg,allseg$chrom==chr)
+    #   #ss2 <- subset(ss2,ss2$num.mark>20)
+    #   count=0
+    #   ss4 <- rbind(ss4,ss2[1,])
+    #   if (nrow(ss2) >1) {
+    #     for (i in 1:(nrow(ss2)-1)){
+    #       lines <- abs(ss2$seg.mean[i+1] - ss4$seg.mean[rows+i-count]) > 0.035
+    #       if (lines == 1) ss4 <- rbind(ss4,ss2[i+1,])
+    #       if (lines == 0) {
+    #         ss4$loc.end [rows+i-count] <- ss2$loc.end[i+1]
+    #         ss4$seg.mean[rows+i-count] <- ss2$seg.mean[i+1]
+    #         ss4$num.mark[rows+i-count] <- ss4$num.mark[rows+i-count]+ss2$num.mark[i+1]
+    #         #ss4[rows+i-1-count,4:ncol(ss2)] <- ss2[i,4:ncol(ss2)]
+    #         count= count+1
+    #       }
+    #     }
+    #   }
+    #
+    # }
+    # allseg <- ss4
 
-    }
-    allseg <- ss4
 
-
-    Out <- sprintf("%s/%s/segments,fracb.tsv",remotedir,seriesName,cid)
+    Out <- file.path(remotedir,seriesName,arrayName,"segments,fracb.tsv")
     cat("ID","chr","loc.start","loc.end","fracB\n",sep="\t",file=Out,append=FALSE)
     for (chr in 1:23){
       #cat(sprintf("Chr%d \n",chr),file=Out,append=TRUE)
@@ -111,14 +106,16 @@ BafAnalysis <- function(seriesName,chipType,arrayName,remotedir) {
         abline(mean(y),0)
         abline(mean(y)-sd(y),0,col="red")
         peak <- x[tp$peaks]
+        peak <- sort(c(peak,1-peak))
+        peak <- rm.near.dy(peak)
         if (length(peak) == 0) next
         for (line in 1:length(peak)){
-          cat(cid,chr,range,peak[line],'\n',sep="\t",file=Out,append=TRUE)
+          cat(arrayName,chr,range,peak[line],'\n',sep="\t",file=Out,append=TRUE)
         }
       }
     }
   }
-}
+# }
 
 
   ##dynamic remove

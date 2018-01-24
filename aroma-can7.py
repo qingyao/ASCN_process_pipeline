@@ -16,7 +16,8 @@ import finder_colors as color
 @click.option('-f','--force',default=0,help='if 1, will force rerun for selected series')
 @click.option('-u','--update',default=0,help='renew the list of series from metadata')
 @click.option('-o','--option',default='noprocess',help="'probe' for raw data to probes; 'seg' for initial segmentation; 'reseg' for evaluation of cn segments and possible re-segmentation")
-def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,update,option):
+@click.option('-ft','--filetype',default='cn',help="in probe processing not needed, for seg or reseg, need to indicate 'cn' or 'fracb'.")
+def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,update,option,filetype):
     if option == 'noprocess':
         sys.exit('no process option specified.')
     p = Pool(processes=threads)
@@ -96,9 +97,9 @@ def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,
         if option == 'probe':
             shellcommand = 'R --vanilla <{0}/ProcessPipeline-probe.R --args {1} {2} {3} {0} {4} {5} &>/dev/null'.format(sourcedir,workingdir,seriesname,cleanup,memory,force)
         elif option == 'seg':
-            shellcommand = 'R --vanilla <{0}/ProcessPipeline-seg.R --args {1} {2} {0} {3} &>/dev/null'.format(sourcedir,workingdir,seriesname,force)
+            shellcommand = 'R --vanilla <{0}/ProcessPipeline-seg.R --args {1} {2} {0} {3} {4} &>/dev/null'.format(sourcedir,workingdir,seriesname,force,filetype)
         elif option == 'reseg':
-            shellcommand = 'R --vanilla <{0}/ProcessPipeline-reseg.R --args {1} {2} {0} &>/dev/null'.format(sourcedir,workingdir,seriesname)
+            shellcommand = 'R --vanilla <{0}/ProcessPipeline-reseg.R --args {1} {2} {0} {3} &>/dev/null'.format(sourcedir,workingdir,seriesname, filetype)
 
         run(shellcommand,shell=True)
 

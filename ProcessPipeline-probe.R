@@ -10,8 +10,8 @@ sourcedir <- args[4]
 memory <- args[5]
 force <- as.numeric(args[6])
 Pipelinedir <- file.path(sourcedir,'Rpipeline')
-sourcefiles <- list.files(Pipelinedir)
-sapply(file.path(Pipelinedir,sourcefiles),source,.GlobalEnv)
+source(file.path(Pipelinedir,'final_ACNE_hg19.R'))
+source(file.path(Pipelinedir,'final_doCRMAv2.R'))
 
 log <- vector()
 localdir <- paste0(workingdir,"/rawData/",seriesName)
@@ -41,7 +41,7 @@ for (chipType in chipTypes){
             incomplete <- 1
             break
           }
-        }    
+        }
 
       }
     }

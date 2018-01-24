@@ -31,18 +31,19 @@ cnsegPerArray <- function(workingdir,seriesName, arrayName, undosd, chipType){
 
     }
   logfile <- file.path(workingdir,'processed',seriesName,arrayName,'cnseg,log.txt')
-  cat(Sys.time(), sprintf("undosd = %s",undosd)) ## add more information later ??not written to log file, and no new line
-  rmGaps(workingdir,seriesName,arrayName,chipType)
+  cat(Sys.time(), sprintf("undosd = %s",undosd), file=logfile, append=T)
 }
 
 ############################
 #### fracb segmentation ####
 ############################
 
-fracBsegperArray <- function(seriesName,arrayName, chipType,workingdir){
+fracbsegperArray <- function(seriesName,arrayName, chipType,workingdir){
 
-    fn <- file.path(workingdir,"processed",seriesName,arrayName,'fracBseg.tab')
+    fn <- file.path(workingdir,"processed",seriesName,arrayName,'fracbseg.tsv')
     cat("ID","chrom","loc.start", "loc.end", "num.mark", "seg.mean","seg.sd","seg.median", "seg.mad\n",sep="\t",file=fn,append = F)
+    fp <- file.path(workingdir,"processed",seriesName,arrayName,'fracbseg,provenance.tsv')
+    cat("ID","chrom","loc.start", "loc.end", "num.mark", "seg.mean","seg.sd","seg.median", "seg.mad\n",sep="\t",file=fp,append = F)
     for (chrname in 1:23){
       data<- read.table(sprintf("%s/processed/%s/%s/fracB,chr%d.tab",workingdir,seriesName,arrayName,chrname),header=T)
       #cat("Working on", arrayName, "\n", file=stderr())
@@ -80,43 +81,3 @@ fracBsegperArray <- function(seriesName,arrayName, chipType,workingdir){
 
     }
   }
-
-rmGaps <- function(workingdir,seriesName,arrayName,chipType){
-  fn <- file.path(workingdir,'processed',seriesName,arrayName,'segments,cn.tsv')
-  file <- read.table(fn,header = T)
-  gapfile <- read.table(sprintf("%s/PlatformInfo/%s_GapPos.tab",workingdir,chipType),header = T)
-  newfile <- data.frame()
-  for (chr in 1:23) {
-    subfile <- subset(file,file$chromosome == chr)
-    gapstart <- gapfile$Gap_start[chr]
-    gapend <- gapfile$Gap_end[chr]
-    for (row in 1:nrow(subfile)) {
-      if ((subfile[row,]$start) < gapstart & (subfile[row,]$end) > gapend) {
-        newrow <- subfile[row,]
-        newrow$start <- gapend
-        subfile[row,]$end  <- gapstart
-        n <- subfile[row,]$probes
-        RatioBefAft <- (gapstart - subfile[row,]$start) / (subfile[row,]$end - gapend)
-        subfile[row,]$probes <- round(RatioBefAft/(RatioBefAft+1) * n)
-        newrow$probes <- round(1/(RatioBefAft+1) * n)
-        if (row < nrow(subfile)) {
-            subfile <- rbind(subfile[1:row,], newrow, subfile[(row+1):nrow(subfile),])
-            next
-          }
-        else {
-          subfile <- rbind(subfile[1:row,], newrow)
-          next
-        }
-      }
-      else if((subfile[row,]$start) < gapstart & subfile[row,]$end <= gapend &subfile[row,]$end > gapstart) {
-        subfile[row,]$end <-gapstart
-      }
-      else if ((subfile[row,]$start) >=gapstart & (subfile[row,]$start) < gapend & subfile[row,]$end > gapend) {
-        subfile[row,]$start <-gapend
-      } else next
-    }
-    newfile <- rbind(newfile,subfile)
-  }
-  write.table(newfile, file=fn, sep="\t", quote=FALSE, row.names=FALSE, col.names=T)
-
-}

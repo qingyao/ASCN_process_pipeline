@@ -7,9 +7,10 @@ setwd(workingdir)
 seriesName <- args[2]
 sourcedir <- args[3]
 force <- as.numeric(args[4])
+filetype <- args[5]
 Pipelinedir <- file.path(sourcedir,'Rpipeline')
-sourcefiles <- list.files(Pipelinedir)
-sapply(file.path(Pipelinedir,sourcefiles),source,.GlobalEnv)
+source(file.path(Pipelinedir,'common_function.r'))
+source(file.path(Pipelinedir,'final_seg.r'))
 
 log <- vector()
 localdir <- paste0(workingdir,"/rawData/",seriesName)
@@ -45,7 +46,7 @@ for (chipType in chipTypes){
   if (force == 0) {
     newcids = vector()
     for (i in 1:length(cids)){
-      if(!file.exists(file.path(remoteProcessPath,cids[i],'segments,cn.tsv'))) {
+      if(!file.exists(file.path(remoteProcessPath,cids[i],chooseFile(filetype,1)[[1]] )) {
         newcids <- c(newcids,cids[i])
       }
     }
@@ -58,10 +59,10 @@ for (chipType in chipTypes){
       for (cid in cids) {
         localsettings <- settings
         localsettings[['arrayName']] <- cid
-        log <- c(log,tryCatch({do.call(cnsegPerArray,localsettings)},error=function(e){
+        log <- c(log,tryCatch({do.call(get(sprintf('%ssegperArray',filetype)),localsettings)},error=function(e){
             message("Here's the original error message:")
             message(e,"\n")
-            return(paste0("Error\t",format(Sys.time(), "%y-%m-%d %H:%M:%S"),"\t","CNsegmentation\t",seriesName,"\t",e))}))
+            return(paste0("Error\t",format(Sys.time(), "%y-%m-%d %H:%M:%S"),"\t",sprintf("%s segmentation\t",toupper(filetype)),seriesName,"\t",e))}))
       }
     } else {
       next
