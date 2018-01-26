@@ -65,6 +65,7 @@ ACNE <- function(seriesName,chipType,workingdir,sourcedir,memory) {
       colnames(fracB)[2:4] <- c("CHRO","BASEPOS","VALUE")
       fracB$VALUE <- round(fracB$VALUE,4)
       write.table(fracB,sprintf("%s/probes,fracb,chr%d.tsv",Plotpath,chromosome),quote=F,sep="\t",row.names = F)
+      cat(sprintf('%s/%s\n',seriesName,cs$Names[ii]),file=file.path(getwd(),"processed",'log_ACNE.txt'),append=T)
     }
 
   }
