@@ -4,6 +4,7 @@ future::plan("multiprocess")
 args = commandArgs(trailingOnly = TRUE)
 workingdir <- args[1]
 setwd(workingdir)
+dir.create(file.path(getwd(),"processed",'logs'),showWarnings=F)
 seriesName <- args[2]
 cleanup <- args[3]
 sourcedir <- args[4]
@@ -20,8 +21,8 @@ remotedir <- paste0("/Volumes/arraymapIncoming/aroma/aromaRaw/",seriesName)
 chipTypes <- list.files(remotedir)
 time <- format(Sys.time(), "%m%d-%H%M%S")
 for (chipType in chipTypes){
-  if (!chipType %in% list.files(file.path(getwd(),"annotationData","chipTypes"))) break
-
+  if (!chipType %in% list.files(file.path(getwd(),"annotationData","chipTypes"))) next
+  if (!chipType %in% c('Mapping50K_Xba240','Mapping50K_Hind240')) next
   if (dir.exists(localdir) == FALSE) dir.create(localdir)
   localpath <- paste0(localdir,"/",chipType)
   if (dir.exists(localpath) == FALSE) dir.create(localpath)
@@ -47,8 +48,8 @@ for (chipType in chipTypes){
     }
     return(incomplete)
   }
-  fracbIncomplete <- checkIncomplete('fracB,chr%s.tab')
-  cnIncomplete <- checkIncomplete('probes,cn,chr%s.tsv')
+  fracbIncomplete <- force | checkIncomplete('fracB,chr%s.tab')
+  cnIncomplete <- force | checkIncomplete('probes,cn,chr%s.tsv')
   message("fracb",fracbIncomplete)
   message("cn",cnIncomplete)
   if (fracbIncomplete | cnIncomplete){
@@ -66,7 +67,7 @@ for (chipType in chipTypes){
     memory = memory
   )
 
-  if (fracbIncomplete | force) {
+  if (fracbIncomplete) {
 
     log <- c(log,tryCatch({do.call(ACNE,settings)},error=function(e){
     message("Here's the original error message:")
@@ -75,7 +76,7 @@ for (chipType in chipTypes){
 
   }
 
-  if (cnIncomplete | force) {
+  if (cnIncomplete) {
 
     log <- c(log,tryCatch({do.call(CRMAv2,settings)},error=function(e){
     message("Here's the original error message:")
