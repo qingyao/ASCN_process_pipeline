@@ -4,6 +4,7 @@ future::plan("multiprocess")
 args = commandArgs(trailingOnly = TRUE)
 workingdir <- args[1]
 setwd(workingdir)
+dir.create(file.path(getwd(),"processed",'logs'),showWarnings=F)
 seriesName <- args[2]
 cleanup <- args[3]
 sourcedir <- args[4]
