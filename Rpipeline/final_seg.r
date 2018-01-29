@@ -7,10 +7,9 @@ suppressWarnings(suppressMessages(library(DNAcopy)))
 
 cnsegPerArray <- function(workingdir,seriesName, arrayName, undosd, chipType){
   dir.create(file.path(workingdir,'processed',seriesName,arrayName), showWarnings = FALSE)
-  dir.create(file.path(workingdir,'processed',seriesName,arrayName,'provenance'), showWarnings = FALSE)
   fn <- file.path(workingdir,'processed',seriesName,arrayName,'segments,cn.tsv')
   cat("sample_id","chromosome","start", "end", "value", "probes\n",sep="\t",file=fn,append = F)
-  fp <- file.path(workingdir,'processed',seriesName,arrayName,'provenance','segments,cn.tsv')
+  fp <- file.path(workingdir,'processed',seriesName,arrayName,'segments,cn,provenance.tsv')
   cat("sample_id","chromosome","start", "end", "value", "probes\n",sep="\t",file=fp,append = F)
   for (chrname in 1:23){
     data<- read.table(sprintf('/Volumes/arraymapMirror/arraymap/hg19/%s/%s/probes,cn,chr%d.tsv',seriesName,arrayName,chrname),header=T)
@@ -31,7 +30,7 @@ cnsegPerArray <- function(workingdir,seriesName, arrayName, undosd, chipType){
 
     }
   logfile <- file.path(workingdir,'processed',seriesName,arrayName,'cnseg,log.txt')
-  cat(Sys.time(), sprintf("undosd = %s",undosd), file=logfile, append=T)
+  cat(as.character(Sys.time()), sprintf("undosd = %s",undosd), file=logfile, append=T)
 }
 
 ############################
