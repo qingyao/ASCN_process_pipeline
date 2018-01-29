@@ -38,7 +38,7 @@ cnsegPerArray <- function(workingdir,seriesName, arrayName, undosd, chipType){
 #### fracb segmentation ####
 ############################
 
-fracbsegperArray <- function(seriesName,arrayName, chipType,workingdir){
+fracbsegPerArray <- function(seriesName,arrayName, chipType,workingdir){
 
     fn <- file.path(workingdir,"processed",seriesName,arrayName,'fracbseg.tsv')
     cat("ID","chrom","loc.start", "loc.end", "num.mark", "seg.mean","seg.sd","seg.median", "seg.mad\n",sep="\t",file=fn,append = F)

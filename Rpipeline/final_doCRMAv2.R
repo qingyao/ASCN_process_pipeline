@@ -123,12 +123,7 @@ CRMAv2  <- function(seriesName,chipType,workingdir,sourcedir,memory) {
       samplepath <- file.path(path,sampleIDs[i])
       if (dir.exists(samplepath) == 0) dir.create(samplepath)
       write.table(out,file.path(samplepath,sprintf("probes,cn,chr%s.tsv",chr)),sep = "\t", quote = F,row.names = F)
-<<<<<<< HEAD
-      dir.create(file.path(getwd(),"processed",'logs'),showWarnings=F)
-      cat(sprintf('%s/%s\n',seriesName,cs$Names[ii]),file=file.path(getwd(),"processed",'logs','log_CRMAv2.txt'),append=T)
-=======
       cat(sprintf('%s/%s\n',seriesName,sampleIDs[i]),file=file.path(getwd(),"processed",'logs','log_CRMAv2.txt'),append=T)
->>>>>>> 2634620f778a59bf542e972c281729f5961bd3e5
     }
 
   }

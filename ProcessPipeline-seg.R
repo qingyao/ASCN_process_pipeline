@@ -46,7 +46,7 @@ for (chipType in chipTypes){
   if (force == 0) {
     newcids = vector()
     for (i in 1:length(cids)){
-      if(!file.exists(file.path(remoteProcessPath,cids[i],chooseFile(filetype,1)[[1]] )) {
+      if(!file.exists(file.path(remoteProcessPath,cids[i],chooseFile(filetype,1)[[1]] ))) {
         newcids <- c(newcids,cids[i])
       }
     }
@@ -59,7 +59,7 @@ for (chipType in chipTypes){
       for (cid in cids) {
         localsettings <- settings
         localsettings[['arrayName']] <- cid
-        log <- c(log,tryCatch({do.call(get(sprintf('%ssegperArray',filetype)),localsettings)},error=function(e){
+        log <- c(log,tryCatch({do.call(get(sprintf('%ssegPerArray',filetype)),localsettings)},error=function(e){
             message("Here's the original error message:")
             message(e,"\n")
             return(paste0("Error\t",format(Sys.time(), "%y-%m-%d %H:%M:%S"),"\t",sprintf("%s segmentation\t",toupper(filetype)),seriesName,"\t",e))}))
