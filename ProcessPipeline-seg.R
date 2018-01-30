@@ -61,10 +61,10 @@ for (chipType in chipTypes){
       for (cid in cids) {
         localsettings <- settings
         localsettings[['arrayName']] <- cid
-#        log <- c(log,tryCatch({do.call(get(sprintf('%ssegPerArray',filetype)),localsettings)},error=function(e){
-#            message("Here's the original error message:")
-#            message(e,"\n")
-#            return(paste0("Error\t",format(Sys.time(), "%y-%m-%d %H:%M:%S"),"\t",sprintf("%s segmentation\t",toupper(filetype)),seriesName,"\t",e))}))
+        log <- c(log,tryCatch({do.call(get(sprintf('%ssegPerArray',filetype)),localsettings)},error=function(e){
+            message("Here's the original error message:")
+            message(e,"\n")
+            return(paste0("Error\t",format(Sys.time(), "%y-%m-%d %H:%M:%S"),"\t",sprintf("%s segmentation\t",toupper(filetype)),seriesName,"\t",e))}))
         if (filetype == 'fracb'){
         log <- c(log,tryCatch({BafAnalysis(seriesName=seriesName,chipType=chipType,arrayName=cid,remotedir=remoteProcessPath)},error=function(e){
             message("Here's the original error message:")
