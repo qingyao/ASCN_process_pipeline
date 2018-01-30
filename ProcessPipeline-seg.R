@@ -28,7 +28,7 @@ for (chipType in chipTypes){
   remotepath <- paste0(remotedir,"/",chipType)
 
   files<- list.files(remotepath)
-  remoteProcessPath <- file.path("/Volumes/arraymapMirror/arraymap/hg19",seriesName)
+  remoteProcessPath <- "/Volumes/arraymapMirror/arraymap/hg19"
   cids <- gsub(".CEL","",files)
 
   settings = list (
@@ -36,7 +36,8 @@ for (chipType in chipTypes){
     arrayName = NULL,
     chipType = chipType,
     workingdir = workingdir,
-    undosd = 1
+    undosd = 1,
+    remotedir = remoteProcessPath
   )
 
   #check if all segments,cn.tsv are there for all arrays.
@@ -46,7 +47,7 @@ for (chipType in chipTypes){
   if (force == 0) {
     newcids = vector()
     for (i in 1:length(cids)){
-      if(!file.exists(file.path(remoteProcessPath,cids[i],chooseFile(filetype,1)[[1]] ))) {
+      if(!file.exists(file.path(remoteProcessPath,seriesName,cids[i],chooseFile(filetype,1)[[1]] ))) {
         newcids <- c(newcids,cids[i])
       }
     }

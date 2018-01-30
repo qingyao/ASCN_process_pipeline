@@ -5,17 +5,26 @@ suppressWarnings(suppressMessages(library(DNAcopy)))
 ########################
 
 
-cnsegPerArray <- function(workingdir,seriesName, arrayName, undosd, chipType){
+cnsegPerArray <- function(workingdir,remotedir,seriesName, arrayName, undosd, chipType){
   dir.create(file.path(workingdir,'processed',seriesName,arrayName), showWarnings = FALSE)
   fn <- file.path(workingdir,'processed',seriesName,arrayName,'segments,cn.tsv')
   cat("sample_id","chromosome","start", "end", "value", "probes\n",sep="\t",file=fn,append = F)
   fp <- file.path(workingdir,'processed',seriesName,arrayName,'segments,cn,provenance.tsv')
   cat("sample_id","chromosome","start", "end", "value", "probes\n",sep="\t",file=fp,append = F)
   for (chrname in 1:23){
-    data<- read.table(sprintf('/Volumes/arraymapMirror/arraymap/hg19/%s/%s/probes,cn,chr%d.tsv',seriesName,arrayName,chrname),header=T)
-    cna1 <- CNA(genomdat=data$VALUE,
-                chrom=rep(chrname, length(data$VALUE)),
-                maploc=data$BASEPOS,
+    data<- read.table(sprintf('%s/%s/%s/probes,cn,chr%d.tsv',remotedir,seriesName,arrayName,chrname),header=T)
+
+    if ('BASEPOS' %in% colnames(data) & 'VALUE' %in% colnames(data)){
+          posn <-data$BASEPOS
+          cnvalue <-data$VALUE
+          } else{
+          posn <- data[,3]
+          cnvalue<- data[,4]
+          }
+
+    cna1 <- CNA(genomdat=cnvalue,
+                chrom=rep(chrname, length(cnvalue)),
+                maploc=posn,
                 data.type="logratio",
                 sampleid=arrayName)
     smoo1 <- smooth.CNA(cna1, smooth.region=5,smooth.SD.scale=2)
@@ -37,19 +46,25 @@ cnsegPerArray <- function(workingdir,seriesName, arrayName, undosd, chipType){
 #### fracb segmentation ####
 ############################
 
-fracbsegPerArray <- function(seriesName,arrayName, chipType,workingdir){
+fracbsegPerArray <- function(workingdir,remotedir,seriesName, arrayName, undosd, chipType){
 
     fn <- file.path(workingdir,"processed",seriesName,arrayName,'fracbseg.tsv')
     cat("ID","chrom","loc.start", "loc.end", "num.mark", "seg.mean","seg.sd","seg.median", "seg.mad\n",sep="\t",file=fn,append = F)
     fp <- file.path(workingdir,"processed",seriesName,arrayName,'fracbseg,provenance.tsv')
     cat("ID","chrom","loc.start", "loc.end", "num.mark", "seg.mean","seg.sd","seg.median", "seg.mad\n",sep="\t",file=fp,append = F)
     for (chrname in 1:23){
-      data<- read.table(sprintf("%s/processed/%s/%s/fracB,chr%d.tab",workingdir,seriesName,arrayName,chrname),header=T)
+      data<- read.table(sprintf('%s/%s/%s/probes,fracb,chr%d.tsv',remotedir,seriesName,arrayName,chrname),header=T)
       #cat("Working on", arrayName, "\n", file=stderr())
       #for (chrname in c('X', 'Y', 22:1)) {
       #cat("\tProcessing", chrname, "\n", file=stderr())
-      posn <-data$BASEPOS
-      baf1 <-data$VALUE
+      if ('BASEPOS' %in% colnames(data) & 'VALUE' %in% colnames(data)){
+            posn <-data$BASEPOS #[,]
+            baf1 <-data$VALUE
+            } else{
+            posn <- data[,3]
+            baf1<- data[,4]
+            }
+
 
       ### mBAF mirrored
       mbaf <- unlist(sapply(baf1, function(x) {
