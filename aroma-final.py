@@ -85,7 +85,7 @@ def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,
         if option == 'probe':
             shellcommand = 'R --vanilla <{0}/ProcessPipeline-probe.R --args {1} {2} {3} {0} {4} {5} &>/dev/null'.format(sourcedir,workingdir,seriesname,cleanup,memory,force)
         elif option == 'seg':
-            shellcommand = 'R --vanilla <{0}/ProcessPipeline-seg.R --args {1} {2} {0} {3} {4} &>/dev/null'.format(sourcedir,workingdir,seriesname,force,filetype)
+            shellcommand = 'R --vanilla <{0}/test_dir/ProcessPipeline-seg_test.R --args {1} {2} {0} {3} {4} &>/dev/null'.format(sourcedir,workingdir,seriesname,force,filetype)
         elif option == 'reseg':
             shellcommand = 'R --vanilla <{0}/ProcessPipeline-reseg.R --args {1} {2} {0} {3} &>/dev/null'.format(sourcedir,workingdir,seriesname, filetype)
 
