@@ -102,7 +102,7 @@ def cli(block,cleanup,threads,workingdir,sourcedir,allblocks,memory,error,force,
         #     wf.write('\t'.join([time.strftime('%Y-%m-%d %H:%M:%S'),machine,str(elapsedTime)+'sec\n']))
         #     wf.close()
 
-        syncCmd = 'expect {0}/expect_syncback.sh {1}'.format(sourcedir,seriesname,workingdir)
+        syncCmd = 'expect {0}/test_dir/expect_syncback_test.sh {1}'.format(sourcedir,seriesname,workingdir)
         rmCmd = 'for dir in {0}/processed/{1}/GSM*;do rm $dir/fracB,*;rm $dir/probes,*;done &>/dev/null'.format(workingdir,seriesname)
         run(syncCmd,shell=True)
 
