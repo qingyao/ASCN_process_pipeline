@@ -11,15 +11,8 @@ cnsegPerArray <- function(workingdir,remotedir,seriesName, arrayName, undosd, ch
   cat("sample_id","chromosome","start", "end", "value", "probes\n",sep="\t",file=fn,append = F)
   fp <- file.path(workingdir,'processed',seriesName,arrayName,'segments,cn,provenance.tsv')
   cat("sample_id","chromosome","start", "end", "value", "probes\n",sep="\t",file=fp,append = F)
-  if (file.exists(sprintf('%s/%s/%s/probes,cn.tsv',remotedir,seriesName,arrayName))){
-    alldata <- read.table(sprintf('%s/%s/%s/probes,cn.tsv',remotedir,seriesName,arrayName),header=T,stringsAsFactors=F)
-  }
   for (chrname in 1:23){
-    if (exists('alldata')){
-      data <- alldata[alldata[,2]==chrname,]
-    } else{
-      data<- read.table(sprintf('%s/%s/%s/probes,cn,chr%d.tsv',remotedir,seriesName,arrayName,chrname),header=T,stringsAsFactors=F)
-    }
+    data<- read.table(sprintf('%s/%s/%s/probes,cn,chr%d.tsv',remotedir,seriesName,arrayName,chrname),header=T)
 
     if ('BASEPOS' %in% colnames(data) & 'VALUE' %in% colnames(data)){
           posn <-data$BASEPOS
@@ -59,15 +52,8 @@ fracbsegPerArray <- function(workingdir,remotedir,seriesName, arrayName, undosd,
     cat("ID","chrom","loc.start", "loc.end", "num.mark", "seg.mean","seg.sd","seg.median", "seg.mad\n",sep="\t",file=fn,append = F)
     fp <- file.path(workingdir,"processed",seriesName,arrayName,'fracbseg,provenance.tsv')
     cat("ID","chrom","loc.start", "loc.end", "num.mark", "seg.mean","seg.sd","seg.median", "seg.mad\n",sep="\t",file=fp,append = F)
-    if (file.exists(sprintf('%s/%s/%s/probes,fracb.tsv',remotedir,seriesName,arrayName))){
-      alldata <- read.table(sprintf('%s/%s/%s/probes,fracb.tsv',remotedir,seriesName,arrayName),header=T,stringsAsFactors=F)
-    }
     for (chrname in 1:23){
-      if (exists('alldata')){
-        data <- alldata[alldata[,2]==chrname,]
-      } else{
-        data<- read.table(sprintf('%s/%s/%s/probes,fracb,chr%d.tsv',remotedir,seriesName,arrayName,chrname),header=T,stringsAsFactors=F)
-      }
+      data<- read.table(sprintf('%s/%s/%s/probes,fracb,chr%d.tsv',remotedir,seriesName,arrayName,chrname),header=T)
       #cat("Working on", arrayName, "\n", file=stderr())
       #for (chrname in c('X', 'Y', 22:1)) {
       #cat("\tProcessing", chrname, "\n", file=stderr())

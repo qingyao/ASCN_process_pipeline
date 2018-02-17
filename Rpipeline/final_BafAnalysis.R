@@ -4,7 +4,7 @@
 
 suppressWarnings(suppressMessages(library(plyr)))
 
-BafAnalysis <- function(seriesName,chipType,arrayName,remotedir,filename,workingdir) {
+BafAnalysis <- function(seriesName,chipType,arrayName,remotedir) {
   options("scipen"=100, "digits"=4)
 
   # remoterawdir = "/Volumes/arraymapIncoming/aroma/aromaRaw/"
@@ -13,7 +13,7 @@ BafAnalysis <- function(seriesName,chipType,arrayName,remotedir,filename,working
   # for (cid in cids){
     cat("Processing sample:",arrayName,'\n')
     filelist <- list.files(paste(remotedir,seriesName,arrayName,sep="/"))
-    cnfile <- filelist[grep("fracB,chr",filelist)]
+    cnfile <- filelist[grep("probes,fracb,chr",filelist)]
     allfracb <- data.frame()
     for (j in cnfile) {
       allfracb <- rbind(allfracb,read.table(paste(remotedir,seriesName,arrayName,j,sep="/"),header=TRUE))
@@ -110,8 +110,7 @@ BafAnalysis <- function(seriesName,chipType,arrayName,remotedir,filename,working
         peak <- rm.near.dy(peak)
         if (length(peak) == 0) next
         for (line in 1:length(peak)){
-          cat(arrayName,chr,range,peak[line],sep="\t",file=Out,append=TRUE)
-          cat('\n',file=Out,append=TRUE)
+          cat(arrayName,chr,range,peak[line],'\n',sep="\t",file=Out,append=TRUE)
         }
       }
     }

@@ -1,5 +1,8 @@
 .DS_Store
 __pycache__/
 affy.tsv
+<<<<<<< HEAD
 __pycache__
 series_platform.tsv
+=======
+>>>>>>> parent of 2a40d7b... add test of 1000 files segmentation
